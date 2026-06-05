@@ -24,11 +24,12 @@ const stations = [
   { id: "topDark2", x: 622, y: 82, type: "regular" },
 ];
 
+const astarNodes = ["start", "tBottom", "dark1", "dark2", "dark3", "dark4", "dark5", "tRight", "goal"];
 const dijkstraNodes = [
+  "start",
   "tBottom",
   "dark0",
   "tTop",
-  "start",
   "dark1",
   "g2",
   "g3",
@@ -45,90 +46,43 @@ const dijkstraNodes = [
   "goal",
 ];
 
-const astarNodes = ["tBottom", "start", "dark1", "dark2", "dark3", "dark4", "dark5", "goal"];
+const routePath = "M215 312 V392 H700 Q790 392 790 322 V126";
+const dijkstraSweepPath = "M215 392 H112 M215 206 H76 M215 206 Q278 206 278 268 V291 Q278 334 321 334 H456 Q506 334 506 284 Q506 246 544 246 H790 M622 82 H746 Q790 82 790 126";
 
-const steps = [
-  {
-    kicker: "1. Problema",
-    tab: "Problema",
-    title: "Inicio y destino",
-    score: "Punto de partida",
-    explainTitle: "El problema",
-    explain:
-      "Queremos llegar desde la estacion azul hasta la roja. La ruta final esta dos estaciones arriba del transbordo gris derecho.",
-    mode: "problem",
+const modes = {
+  compare: {
+    label: "Comparacion final",
+    title: "A* llega con 8 nodos. Dijkstra revisa 18.",
+    dijkstra: 18,
+    astar: 8,
   },
-  {
-    kicker: "2. Primera decision",
-    tab: "Decision",
-    title: "Dos caminos posibles",
-    score: "A o B",
-    explainTitle: "Primera decision",
-    explain:
-      "Desde el inicio se puede subir por verde claro o bajar al transbordo inferior para tomar la linea verde oscura.",
-    mode: "decision",
+  astar: {
+    label: "Recorrido de A*",
+    title: "Ruta guiada por f = g + h",
+    dijkstra: "-",
+    astar: 8,
   },
-  {
-    kicker: "3. Evaluacion A*",
-    tab: "f = g + h",
-    title: "La prioridad sale de f",
-    score: "Ambas f = 5",
-    explainTitle: "Formula",
-    explain:
-      "g mide lo que ya costo llegar. h estima cuantas estaciones faltan. A* elige los nodos con menor f.",
-    mode: "formula",
+  dijkstra: {
+    label: "Recorrido de Dijkstra",
+    title: "Explora parejo hasta encontrar el destino",
+    dijkstra: 18,
+    astar: "-",
   },
-  {
-    kicker: "4. Exploracion inicial",
-    tab: "Explora",
-    title: "A* abre la frontera",
-    score: "Empate inicial",
-    explainTitle: "Frontera",
-    explain:
-      "Como las dos primeras opciones empatan, A* explora un paso en ambas rutas antes de priorizar la que se acerca al destino.",
-    mode: "initial",
-  },
-  {
-    kicker: "5. Comparacion",
-    tab: "Comparar",
-    title: "Dijkstra explora mas",
-    score: "18 contra 8",
-    explainTitle: "Comparacion",
-    explain:
-      "Dijkstra no usa destino como guia, por eso expande muchos nodos con el mismo costo. A* descarta caminos menos prometedores.",
-    mode: "compare",
-  },
-  {
-    kicker: "6. Resultado final",
-    tab: "Resultado",
-    title: "Misma ruta, menos nodos",
-    score: "A*: 8 nodos",
-    explainTitle: "Resultado",
-    explain:
-      "A* encuentra una ruta optima explorando 8 nodos, mientras Dijkstra necesita 18 en este ejemplo.",
-    mode: "result",
-  },
-];
+};
 
 const stationLayer = document.querySelector("#stationLayer");
-const candidateLayer = document.querySelector("#candidateLayer");
+const exploreLayer = document.querySelector("#exploreLayer");
 const routeLayer = document.querySelector("#routeLayer");
-const labelLayer = document.querySelector("#labelLayer");
-const stepTabs = document.querySelector("#stepTabs");
-const prevStep = document.querySelector("#prevStep");
-const nextStep = document.querySelector("#nextStep");
-const playDemo = document.querySelector("#playDemo");
-const resetDemo = document.querySelector("#resetDemo");
-const stepKicker = document.querySelector("#stepKicker");
-const stepTitle = document.querySelector("#stepTitle");
-const scoreLabel = document.querySelector("#scoreLabel");
-const explainTitle = document.querySelector("#explainTitle");
-const explainText = document.querySelector("#explainText");
+const valueLayer = document.querySelector("#valueLayer");
+const modeLabel = document.querySelector("#modeLabel");
+const modeTitle = document.querySelector("#modeTitle");
 const dijkstraCount = document.querySelector("#dijkstraCount");
 const astarCount = document.querySelector("#astarCount");
+const playDemo = document.querySelector("#playDemo");
+const modeButtons = document.querySelectorAll(".mode-button");
 
-let currentStep = 0;
-let animationTimer = 0;
+let activeMode = "compare";
+let timer = 0;
 
 function svgEl(name, attrs = {}) {
   const node = document.createElementNS("http://www.w3.org/2000/svg", name);
@@ -136,18 +90,21 @@ function svgEl(name, attrs = {}) {
   return node;
 }
 
-function clearLayer(layer) {
+function clear(layer) {
   while (layer.firstChild) layer.removeChild(layer.firstChild);
 }
 
+function stationById(id) {
+  return stations.find((station) => station.id === id);
+}
+
 function drawStations() {
-  clearLayer(stationLayer);
+  clear(stationLayer);
   stations.forEach((station) => {
-    const radius = station.type === "transfer" ? 13 : station.type === "regular" ? 7 : 15;
     const circle = svgEl("circle", {
       cx: station.x,
       cy: station.y,
-      r: radius,
+      r: station.type === "regular" ? 7 : station.type === "transfer" ? 14 : 16,
       class:
         station.type === "transfer"
           ? "transfer"
@@ -161,14 +118,10 @@ function drawStations() {
   });
 }
 
-function stationById(id) {
-  return stations.find((station) => station.id === id);
-}
-
-function drawNode(id, className, radius = 13) {
+function drawNode(id, className, radius = 12) {
   const station = stationById(id);
   if (!station) return;
-  candidateLayer.appendChild(
+  exploreLayer.appendChild(
     svgEl("circle", {
       cx: station.x,
       cy: station.y,
@@ -178,108 +131,91 @@ function drawNode(id, className, radius = 13) {
   );
 }
 
-function drawRoute() {
-  routeLayer.appendChild(
-    svgEl("path", {
-      class: "route-path",
-      d: "M215 312 V392 H700 Q790 392 790 322 V126",
-    }),
-  );
+function drawPath(className, d) {
+  routeLayer.appendChild(svgEl("path", { class: className, d }));
 }
 
-function drawDecisionLabels() {
-  labelLayer.appendChild(svgEl("path", { class: "hint-path", d: "M190 352 V225" }));
-  labelLayer.appendChild(svgEl("path", { class: "hint-path", d: "M238 352 V392 H285" }));
-
-  const labelA = svgEl("g");
-  labelA.innerHTML = '<circle class="callout" cx="160" cy="312" r="22"></circle><text class="map-label" x="151" y="322">A</text>';
-  const labelB = svgEl("g");
-  labelB.innerHTML = '<circle class="callout" cx="190" cy="452" r="22"></circle><text class="map-label" x="181" y="462">B</text>';
-  labelLayer.append(labelA, labelB);
+function drawValues() {
+  clear(valueLayer);
+  const box = svgEl("g", { class: "map-values" });
+  box.innerHTML = `
+    <rect x="36" y="28" width="238" height="86" rx="8"></rect>
+    <text x="58" y="60">A: g=1 h=4 f=5</text>
+    <text x="58" y="91">B: g=2 h=3 f=5</text>
+  `;
+  valueLayer.appendChild(box);
 }
 
-function renderStep(index) {
-  window.clearInterval(animationTimer);
-  currentStep = Math.max(0, Math.min(steps.length - 1, index));
-  const step = steps[currentStep];
+function setMode(mode) {
+  window.clearInterval(timer);
+  activeMode = mode;
+  const data = modes[mode];
 
-  clearLayer(candidateLayer);
-  clearLayer(routeLayer);
-  clearLayer(labelLayer);
+  modeLabel.textContent = data.label;
+  modeTitle.textContent = data.title;
+  dijkstraCount.textContent = data.dijkstra;
+  astarCount.textContent = data.astar;
 
-  stepKicker.textContent = step.kicker;
-  stepTitle.textContent = step.title;
-  scoreLabel.textContent = step.score;
-  explainTitle.textContent = step.explainTitle;
-  explainText.textContent = step.explain;
-  dijkstraCount.textContent = step.mode === "problem" ? "-" : "18";
-  astarCount.textContent = step.mode === "problem" ? "-" : "8";
+  modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
+  clear(exploreLayer);
+  clear(routeLayer);
+  clear(valueLayer);
 
-  document.querySelectorAll(".step-tab").forEach((tab, tabIndex) => {
-    tab.classList.toggle("active", tabIndex === currentStep);
-  });
-
-  if (step.mode === "decision" || step.mode === "formula") {
-    drawDecisionLabels();
+  if (mode === "astar") {
+    astarNodes.forEach((id) => drawNode(id, "node-astar", 12));
+    drawPath("route-astar", routePath);
+    drawValues();
   }
 
-  if (step.mode === "initial") {
-    ["start", "tBottom", "dark1", "dark5"].forEach((id) => drawNode(id, "frontier-node"));
+  if (mode === "dijkstra") {
+    dijkstraNodes.forEach((id) => drawNode(id, "node-dijkstra", 12));
+    drawPath("route-dijkstra-sweep", dijkstraSweepPath);
+    drawPath("route-dijkstra", routePath);
   }
 
-  if (step.mode === "compare") {
-    dijkstraNodes.forEach((id) => drawNode(id, "dijkstra-node", 12));
-    astarNodes.forEach((id) => drawNode(id, "frontier-node", 9));
-  }
-
-  if (step.mode === "result") {
-    astarNodes.forEach((id) => drawNode(id, "frontier-node", 12));
-    drawRoute();
+  if (mode === "compare") {
+    dijkstraNodes.forEach((id) => drawNode(id, "node-dijkstra faint", 11));
+    astarNodes.forEach((id) => drawNode(id, "node-astar", 12));
+    drawPath("route-dijkstra offset", routePath);
+    drawPath("route-astar", routePath);
+    drawValues();
   }
 }
 
-function animateSearch() {
-  renderStep(4);
-  clearLayer(candidateLayer);
-  clearLayer(routeLayer);
+function animate() {
+  setMode("compare");
+  clear(exploreLayer);
+  clear(routeLayer);
+  dijkstraCount.textContent = "0";
+  astarCount.textContent = "0";
 
   let index = 0;
-  animationTimer = window.setInterval(() => {
+  timer = window.setInterval(() => {
     if (index < dijkstraNodes.length) {
-      drawNode(dijkstraNodes[index], "dijkstra-node", 12);
+      drawNode(dijkstraNodes[index], "node-dijkstra", 12);
+      dijkstraCount.textContent = String(index + 1);
     }
 
     if (index < astarNodes.length) {
-      drawNode(astarNodes[index], "frontier-node", 9);
+      drawNode(astarNodes[index], "node-astar", 12);
       astarCount.textContent = String(index + 1);
     }
 
-    dijkstraCount.textContent = String(Math.min(index + 1, dijkstraNodes.length));
     index += 1;
 
     if (index > dijkstraNodes.length) {
-      window.clearInterval(animationTimer);
-      renderStep(5);
+      window.clearInterval(timer);
+      drawPath("route-dijkstra offset", routePath);
+      drawPath("route-astar", routePath);
     }
-  }, 340);
+  }, 280);
 }
 
-function initTabs() {
-  steps.forEach((step, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "step-tab";
-    button.textContent = `${index + 1}. ${step.tab}`;
-    button.addEventListener("click", () => renderStep(index));
-    stepTabs.appendChild(button);
-  });
-}
+modeButtons.forEach((button) => {
+  button.addEventListener("click", () => setMode(button.dataset.mode));
+});
 
-prevStep.addEventListener("click", () => renderStep(currentStep - 1));
-nextStep.addEventListener("click", () => renderStep(currentStep + 1));
-playDemo.addEventListener("click", animateSearch);
-resetDemo.addEventListener("click", () => renderStep(0));
+playDemo.addEventListener("click", animate);
 
 drawStations();
-initTabs();
-renderStep(0);
+setMode(activeMode);
