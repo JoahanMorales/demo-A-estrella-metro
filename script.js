@@ -24,7 +24,7 @@ const stations = [
   { id: "topDark2", x: 622, y: 82, type: "regular" },
 ];
 
-const astarNodes = ["start", "tBottom", "dark1", "dark2", "dark3", "dark4", "dark5", "tRight", "goal"];
+const astarNodes = ["start", "tBottom", "dark1", "dark2", "dark3", "dark4", "dark5", "goal"];
 const dijkstraNodes = [
   "start",
   "tBottom",
@@ -51,22 +51,25 @@ const dijkstraSweepPath = "M215 392 H112 M215 206 H76 M215 206 Q278 206 278 268 
 
 const modes = {
   compare: {
-    label: "Comparacion final",
+    label: "Comparacion",
     title: "A* llega con 8 nodos. Dijkstra revisa 18.",
     dijkstra: 18,
     astar: 8,
+    active: "both",
   },
   astar: {
-    label: "Recorrido de A*",
+    label: "Solo A*",
     title: "Ruta guiada por f = g + h",
-    dijkstra: "-",
+    dijkstra: 18,
     astar: 8,
+    active: "astar",
   },
   dijkstra: {
-    label: "Recorrido de Dijkstra",
+    label: "Solo Dijkstra",
     title: "Explora parejo hasta encontrar el destino",
     dijkstra: 18,
-    astar: "-",
+    astar: 8,
+    active: "dijkstra",
   },
 };
 
@@ -78,6 +81,8 @@ const modeLabel = document.querySelector("#modeLabel");
 const modeTitle = document.querySelector("#modeTitle");
 const dijkstraCount = document.querySelector("#dijkstraCount");
 const astarCount = document.querySelector("#astarCount");
+const dijkstraCard = document.querySelector("#dijkstraCard");
+const astarCard = document.querySelector("#astarCard");
 const playDemo = document.querySelector("#playDemo");
 const modeButtons = document.querySelectorAll(".mode-button");
 
@@ -155,6 +160,8 @@ function setMode(mode) {
   modeTitle.textContent = data.title;
   dijkstraCount.textContent = data.dijkstra;
   astarCount.textContent = data.astar;
+  dijkstraCard.classList.toggle("inactive", data.active === "astar");
+  astarCard.classList.toggle("inactive", data.active === "dijkstra");
 
   modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === mode));
   clear(exploreLayer);
@@ -183,30 +190,42 @@ function setMode(mode) {
 }
 
 function animate() {
-  setMode("compare");
+  const modeToAnimate = activeMode;
+  setMode(modeToAnimate);
   clear(exploreLayer);
   clear(routeLayer);
-  dijkstraCount.textContent = "0";
-  astarCount.textContent = "0";
+  const showAstar = modeToAnimate === "astar" || modeToAnimate === "compare";
+  const showDijkstra = modeToAnimate === "dijkstra" || modeToAnimate === "compare";
+  const totalSteps = Math.max(showDijkstra ? dijkstraNodes.length : 0, showAstar ? astarNodes.length : 0);
+
+  if (showDijkstra) dijkstraCount.textContent = "0";
+  if (showAstar) astarCount.textContent = "0";
 
   let index = 0;
   timer = window.setInterval(() => {
-    if (index < dijkstraNodes.length) {
+    if (showDijkstra && index < dijkstraNodes.length) {
       drawNode(dijkstraNodes[index], "node-dijkstra", 12);
       dijkstraCount.textContent = String(index + 1);
     }
 
-    if (index < astarNodes.length) {
+    if (showAstar && index < astarNodes.length) {
       drawNode(astarNodes[index], "node-astar", 12);
       astarCount.textContent = String(index + 1);
     }
 
     index += 1;
 
-    if (index > dijkstraNodes.length) {
+    if (index >= totalSteps) {
       window.clearInterval(timer);
-      drawPath("route-dijkstra offset", routePath);
-      drawPath("route-astar", routePath);
+      if (modeToAnimate === "compare") {
+        drawPath("route-dijkstra offset", routePath);
+        drawPath("route-astar", routePath);
+      }
+      if (modeToAnimate === "astar") drawPath("route-astar", routePath);
+      if (modeToAnimate === "dijkstra") {
+        drawPath("route-dijkstra-sweep", dijkstraSweepPath);
+        drawPath("route-dijkstra", routePath);
+      }
     }
   }, 280);
 }

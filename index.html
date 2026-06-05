@@ -10,20 +10,23 @@
     <main class="app">
       <header class="topbar">
         <div>
-          <p class="eyebrow">Demo de busqueda</p>
+          <p class="eyebrow">Demo visual</p>
           <h1>A* vs Dijkstra</h1>
         </div>
-        <div class="formula">f = g + h</div>
+        <div class="formula">
+          <span>f = g + h</span>
+          <small>prioridad A*</small>
+        </div>
       </header>
 
       <section class="stage">
         <article class="map-card">
           <div class="map-head">
             <div>
-              <p id="modeLabel">Comparacion final</p>
-              <h2 id="modeTitle">Misma ruta optima, menos nodos con A*</h2>
+              <p id="modeLabel">Comparacion</p>
+              <h2 id="modeTitle">A* llega con menos nodos explorados</h2>
             </div>
-            <div class="route-tags">
+            <div class="route-tags" aria-label="Colores de recorrido">
               <span><i class="line-sample astar"></i>A*</span>
               <span><i class="line-sample dijkstra"></i>Dijkstra</span>
             </div>
@@ -39,16 +42,16 @@
                   <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#15202b" flood-opacity="0.18" />
                 </filter>
                 <filter id="glowGreen" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#5edb39" flood-opacity="0.75" />
+                  <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#5edb39" flood-opacity="0.72" />
                 </filter>
                 <filter id="glowYellow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ffc400" flood-opacity="0.7" />
+                  <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ffc400" flood-opacity="0.68" />
                 </filter>
                 <marker id="arrowAstar" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
-                  <path d="M0,0 L0,8 L9,4 z" fill="#58d13c" />
+                  <path d="M0,0 L0,8 L9,4 z" fill="#40c83a" />
                 </marker>
                 <marker id="arrowDijkstra" markerWidth="12" markerHeight="12" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
-                  <path d="M0,0 L0,8 L9,4 z" fill="#ffbf00" />
+                  <path d="M0,0 L0,8 L9,4 z" fill="#f6b900" />
                 </marker>
               </defs>
 
@@ -56,9 +59,9 @@
               <path class="line line-dark" d="M78 392 H720 Q790 392 790 322 V126 Q790 82 746 82 H600" />
               <path class="line line-gray" d="M76 206 H216 Q278 206 278 268 V291 Q278 334 321 334 H456 Q506 334 506 284 Q506 246 544 246 H842" />
 
-              <g id="exploreLayer"></g>
               <g id="routeLayer"></g>
               <g id="stationLayer"></g>
+              <g id="exploreLayer"></g>
               <g id="valueLayer"></g>
             </svg>
           </div>
@@ -69,31 +72,31 @@
             <button class="mode-button active" data-mode="compare" type="button">Comparar</button>
             <button class="mode-button" data-mode="astar" type="button">A*</button>
             <button class="mode-button" data-mode="dijkstra" type="button">Dijkstra</button>
-            <button class="play-button" id="playDemo" type="button">Animar</button>
+            <button class="play-button" id="playDemo" type="button">Animar modo actual</button>
           </div>
 
           <div class="score-grid">
-            <div class="score-card dijkstra">
+            <div class="score-card dijkstra" id="dijkstraCard">
               <span>Dijkstra</span>
               <strong id="dijkstraCount">18</strong>
-              <small>nodos explorados</small>
+              <small>nodos</small>
             </div>
-            <div class="score-card astar">
+            <div class="score-card astar" id="astarCard">
               <span>A*</span>
               <strong id="astarCount">8</strong>
-              <small>nodos explorados</small>
+              <small>nodos</small>
             </div>
           </div>
 
           <div class="values-card">
-            <h3>Valores iniciales</h3>
+            <h3>Valores</h3>
             <div class="value-row">
-              <span>Ruta A</span>
-              <b>g=1 · h=4 · f=5</b>
+              <span>A</span>
+              <b>g=1 | h=4 | f=5</b>
             </div>
             <div class="value-row">
-              <span>Ruta B</span>
-              <b>g=2 · h=3 · f=5</b>
+              <span>B</span>
+              <b>g=2 | h=3 | f=5</b>
             </div>
           </div>
 

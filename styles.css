@@ -23,8 +23,10 @@ body {
   margin: 0;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(88, 209, 60, 0.18), transparent 34%),
-    linear-gradient(135deg, #f8fbff 0%, var(--bg) 70%);
+    linear-gradient(90deg, rgba(0, 127, 69, 0.08) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(0, 127, 69, 0.06) 1px, transparent 1px),
+    linear-gradient(135deg, #f8fbff 0%, var(--bg) 72%);
+  background-size: 54px 54px, 54px 54px, auto;
   color: var(--ink);
   font-family: Arial, Helvetica, sans-serif;
 }
@@ -36,11 +38,11 @@ button {
 .app {
   width: min(1500px, calc(100% - 28px));
   margin: 0 auto;
-  padding: 18px 0 26px;
+  padding: 14px 0 22px;
 }
 
 .topbar {
-  min-height: 92px;
+  min-height: 86px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -71,18 +73,34 @@ h1 {
 
 .formula {
   flex: 0 0 auto;
-  padding: 18px 24px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  min-width: 210px;
+  min-height: 76px;
+  padding: 12px 22px;
   border-radius: 8px;
   background: #0f1d2c;
   color: #ffffff;
-  font-size: clamp(1.8rem, 4vw, 4rem);
-  font-weight: 900;
   box-shadow: var(--shadow);
+}
+
+.formula span {
+  font-size: clamp(1.8rem, 4vw, 3.6rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.formula small {
+  color: #bed4e8;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .stage {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 330px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 330px);
   gap: 16px;
   align-items: stretch;
 }
@@ -97,7 +115,7 @@ h1 {
 
 .map-card {
   min-width: 0;
-  padding: 18px;
+  padding: 14px;
 }
 
 .map-head {
@@ -105,7 +123,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .map-head p {
@@ -155,7 +173,8 @@ h1 {
 
 .map-wrap {
   width: 100%;
-  aspect-ratio: 900 / 560;
+  height: clamp(340px, calc(100vh - 170px), 690px);
+  min-height: 0;
   overflow: hidden;
   border-radius: 8px;
   background:
@@ -323,7 +342,7 @@ svg {
 }
 
 .score-card {
-  min-height: 128px;
+  min-height: 118px;
   display: grid;
   place-items: center;
   align-content: center;
@@ -354,6 +373,11 @@ svg {
 
 .score-card.astar strong {
   color: #119235;
+}
+
+.score-card.inactive {
+  opacity: 0.32;
+  filter: grayscale(0.7);
 }
 
 .values-card,
@@ -442,6 +466,10 @@ svg {
   .score-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .map-wrap {
+    height: clamp(320px, 58vw, 620px);
+  }
 }
 
 @media (max-width: 680px) {
@@ -454,6 +482,7 @@ svg {
   .map-head {
     align-items: flex-start;
     flex-direction: column;
+    gap: 10px;
   }
 
   .formula {
@@ -467,16 +496,24 @@ svg {
   }
 
   .map-wrap {
-    overflow-x: auto;
-  }
-
-  svg {
-    min-width: 760px;
+    height: clamp(300px, 76vw, 440px);
   }
 
   .side,
   .score-grid,
   .mini-legend {
     grid-template-columns: 1fr;
+  }
+
+  .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .score-card {
+    min-height: 96px;
+  }
+
+  .score-card strong {
+    font-size: 3.2rem;
   }
 }
