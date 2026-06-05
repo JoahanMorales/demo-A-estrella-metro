@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Demostracion A*</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Demostracion visual</p>
+          <h1>Algoritmo A* en una red de metro</h1>
+          <p class="hero-copy">
+            Compara una busqueda uniforme con una busqueda guiada por heuristica para encontrar
+            una ruta optima explorando menos estaciones.
+          </p>
+        </div>
+        <div class="formula-card" aria-label="Formula del algoritmo A estrella">
+          <span>f = g + h</span>
+          <small>costo real + estimacion al destino</small>
+        </div>
+      </section>
+
+      <section class="controls" aria-label="Controles de la demostracion">
+        <button class="icon-button" id="prevStep" type="button" aria-label="Paso anterior" title="Paso anterior">
+          <span aria-hidden="true">&lsaquo;</span>
+        </button>
+        <div class="step-tabs" id="stepTabs" aria-label="Pasos"></div>
+        <button class="icon-button" id="nextStep" type="button" aria-label="Paso siguiente" title="Paso siguiente">
+          <span aria-hidden="true">&rsaquo;</span>
+        </button>
+        <button class="primary-action" id="playDemo" type="button">Animar busqueda</button>
+        <button class="secondary-action" id="resetDemo" type="button">Reiniciar</button>
+      </section>
+
+      <section class="workspace">
+        <article class="visual-panel">
+          <div class="panel-heading">
+            <div>
+              <p id="stepKicker">1. Problema</p>
+              <h2 id="stepTitle">Inicio y destino</h2>
+            </div>
+            <div class="score-pill">
+              <span id="scoreLabel">A*: 8 nodos</span>
+            </div>
+          </div>
+
+          <div class="map-wrap">
+            <svg id="metroMap" viewBox="0 0 900 560" role="img" aria-labelledby="mapTitle mapDesc">
+              <title id="mapTitle">Mapa de metro para demostrar A estrella</title>
+              <desc id="mapDesc">Red con lineas verde claro, verde oscuro y gris, con inicio y destino marcados.</desc>
+
+              <defs>
+                <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#1b2630" flood-opacity="0.16" />
+                </filter>
+                <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L7,3 z" fill="#7fcf3b" />
+                </marker>
+                <marker id="arrowYellow" markerWidth="10" markerHeight="10" refX="6" refY="3" orient="auto" markerUnits="strokeWidth">
+                  <path d="M0,0 L0,6 L7,3 z" fill="#ffc400" />
+                </marker>
+              </defs>
+
+              <path class="line line-light" d="M92 124 H160 Q215 124 215 179 V440 Q215 500 275 500 H405" />
+              <path class="line line-dark" d="M78 392 H720 Q790 392 790 322 V126 Q790 82 746 82 H600" />
+              <path class="line line-gray" d="M76 206 H216 Q278 206 278 268 V291 Q278 334 321 334 H456 Q506 334 506 284 Q506 246 544 246 H842" />
+
+              <g id="stationLayer"></g>
+              <g id="candidateLayer"></g>
+              <g id="routeLayer"></g>
+              <g id="labelLayer"></g>
+            </svg>
+          </div>
+        </article>
+
+        <aside class="info-panel">
+          <div class="explain-box">
+            <h3 id="explainTitle">El problema</h3>
+            <p id="explainText">
+              Queremos llegar desde la estacion azul hasta la roja. Hay dos rutas posibles al inicio:
+              subir por verde claro o bajar para tomar la verde oscura.
+            </p>
+          </div>
+
+          <div class="metric-grid">
+            <div>
+              <span>Dijkstra</span>
+              <strong id="dijkstraCount">18</strong>
+              <small>nodos explorados</small>
+            </div>
+            <div>
+              <span>A*</span>
+              <strong id="astarCount">8</strong>
+              <small>nodos explorados</small>
+            </div>
+          </div>
+
+          <div class="decision-card">
+            <h3>Primera decision</h3>
+            <div class="option-row">
+              <span>Opcion A</span>
+              <b>g = 1, h = 4, f = 5</b>
+            </div>
+            <div class="option-row">
+              <span>Opcion B</span>
+              <b>g = 2, h = 3, f = 5</b>
+            </div>
+            <p>Como ambas tienen la misma prioridad, A* puede revisar las dos antes de quedarse con la ruta prometedora.</p>
+          </div>
+
+          <div class="legend">
+            <h3>Leyenda</h3>
+            <div><i class="dot start"></i>Inicio</div>
+            <div><i class="dot goal"></i>Destino</div>
+            <div><i class="dot transfer"></i>Transbordo</div>
+            <div><i class="dot astar"></i>Nodo A*</div>
+            <div><i class="dot dijkstra"></i>Nodo Dijkstra</div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="compare-panel">
+        <article>
+          <div class="badge yellow">Dijkstra</div>
+          <h2>Expansion uniforme</h2>
+          <p>Explora en todas las direcciones con el mismo costo, incluso estaciones que no ayudan a acercarse al destino.</p>
+        </article>
+        <article>
+          <div class="badge green">A*</div>
+          <h2>Busqueda guiada</h2>
+          <p>Usa la heuristica para priorizar caminos prometedores y encuentra la misma ruta optima con menos exploracion.</p>
+        </article>
+        <article class="key-idea">
+          <div class="badge blue">Idea clave</div>
+          <p>
+            A* no adivina la respuesta: combina lo que ya costo llegar a una estacion con una estimacion razonable
+            de lo que falta.
+          </p>
+        </article>
+      </section>
+    </main>
+
+    <script src="script.js"></script>
+  </body>
+</html>
